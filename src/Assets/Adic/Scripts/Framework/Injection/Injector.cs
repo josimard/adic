@@ -327,6 +327,9 @@ namespace Adic.Injection {
 				var field = fields[fieldIndex];
 				var valueToSet = this.Resolve(field.type, InjectionMember.Field, instance, field.identifier);
 				field.setter(instance, valueToSet);
+				#if UNITY_EDITOR
+				ValidateInjection(instance, valueToSet, field.type);
+				#endif
 			}
 		}
 
@@ -340,6 +343,27 @@ namespace Adic.Injection {
 				var property = properties[propertyIndex];
 				var valueToSet = this.Resolve(property.type, InjectionMember.Property, instance, property.identifier);
 				property.setter(instance, valueToSet);
+				#if UNITY_EDITOR
+				ValidateInjection(instance, valueToSet, property.type);
+				#endif
+			}
+		}
+		
+		/// <summary>
+		/// Verify if injection is problematic and inform user accordingly
+		/// </summary>
+		protected void ValidateInjection(object instance, object value, Type valueType)
+		{
+			// Instance resolved to 'null' when Components are instanciated, an error will be logged soon after.
+			if (instance.ToString() == "null") return;
+			
+			if(value is UnityEngine.Component)
+			{
+				UnityEngine.Component component = value as UnityEngine.Component;
+				if(component == null || component.gameObject==null)
+				{
+					UnityEngine.Debug.LogError("Could not inject '" + valueType.Name + "' from '" + instance.GetType() + "'. Please review your bindings values and order.");
+				}
 			}
 		}
 		
